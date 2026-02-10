@@ -29,6 +29,7 @@ export const executeVoiceAction = (data) => API.post('/products/voice-action', d
 export const fetchExpiryAlerts = () => API.get('/products/expiry-alerts');
 
 export const fetchWholesalers = () => API.get('/auth/wholesalers');
+export const fetchRetailers = () => API.get('/auth/retailers');
 
 export const createB2BOrder = (data) => API.post('/orders/b2b', data);
 export const fetchB2BOrders = () => API.get('/orders/b2b');

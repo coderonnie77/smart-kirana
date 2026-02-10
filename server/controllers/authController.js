@@ -50,3 +50,12 @@ exports.getWholesalers = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+exports.getRetailers = async (req, res) => {
+  try {
+    const retailers = await User.find({ role: 'retailer' }).select('-password');
+    res.json(retailers);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

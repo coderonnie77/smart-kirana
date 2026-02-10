@@ -1,11 +1,20 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { fetchProducts, createOrder } from '../api';
-import { ShoppingBasket, Plus, Minus, Search, Tag, Filter, CheckCircle2, Mic, MicOff, Info, X, Calendar, Hash, FileText, ChevronRight } from 'lucide-react';
+import { fetchProducts, createOrder, fetchRetailers } from '../api';
+import { ShoppingBasket, Plus, Minus, Search, Tag, Filter, CheckCircle2, Mic, MicOff, Info, X, Calendar, Hash, FileText, ChevronRight, Store } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
+const HINDI_DICT = {
+  'namak': 'salt', 'cheeni': 'sugar', 'chini': 'sugar', 'doodh': 'milk', 
+  'chawal': 'rice', 'aata': 'flour', 'tel': 'oil', 'masale': 'spices', 
+  'sabun': 'soap', 'chai': 'tea', 'biskut': 'biscuit', 'daal': 'pulse',
+  'pyaaz': 'onion', 'aalu': 'potato', 'tamatar': 'tomato'
+};
 
 const Marketplace = () => {
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
+  const [retailers, setRetailers] = useState([]);
+  const [activeRetailer, setActiveRetailer] = useState('All');
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [cart, setCart] = useState({});
   const [loading, setLoading] = useState(true);
@@ -18,30 +27,43 @@ const Marketplace = () => {
   const categories = ['All', ...new Set(products.map(p => p.category))];
 
   useEffect(() => {
-    const getProducts = async () => {
+    const getData = async () => {
       try {
-        const { data } = await fetchProducts();
-        setProducts(data);
-        setFilteredProducts(data);
+        const [prodRes, retRes] = await Promise.all([
+          fetchProducts(),
+          fetchRetailers().catch(() => ({ data: [] }))
+        ]);
+        setProducts(prodRes.data);
+        setRetailers(retRes.data);
+        setFilteredProducts(prodRes.data);
         setLoading(false);
       } catch (err) {
         console.error(err);
         setLoading(false);
       }
     };
-    getProducts();
+    getData();
   }, []);
 
   useEffect(() => {
     let result = products;
+    
+    if (activeRetailer !== 'All') {
+      result = result.filter(p => {
+        const rId = p.retailerId?._id || p.retailerId;
+        return rId === activeRetailer;
+      });
+    }
+
     if (activeCategory !== 'All') {
       result = result.filter(p => p.category === activeCategory);
     }
+    
     if (searchTerm) {
       result = result.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
     }
     setFilteredProducts(result);
-  }, [searchTerm, activeCategory, products]);
+  }, [searchTerm, activeCategory, activeRetailer, products]);
 
   const startListening = () => {
     if (!('webkitSpeechRecognition' in window)) {
@@ -53,13 +75,29 @@ const Marketplace = () => {
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      setSearchTerm(transcript);
+      const transcript = event.results[0][0].transcript.toLowerCase();
+      // Simple translation check
+      const translated = transcript.split(' ').map(word => HINDI_DICT[word] || word).join(' ');
+      setSearchTerm(translated);
     };
     recognition.start();
   };
 
   const addToCart = (productId) => {
+    // Check if mixing retailers
+    const product = products.find(p => p._id === productId);
+    const existing = Object.keys(cart);
+    if (existing.length > 0) {
+      const first = products.find(p => p._id === existing[0]);
+      const pRid = product.retailerId?._id || product.retailerId;
+      const fRid = first.retailerId?._id || first.retailerId;
+      
+      if (pRid !== fRid) {
+        if(!window.confirm("You can only order from one retailer at a time. Clear cart and add this item?")) return;
+        setCart({ [productId]: 1 });
+        return;
+      }
+    }
     setCart(prev => ({ ...prev, [productId]: (prev[productId] || 0) + 1 }));
   };
 
@@ -79,7 +117,6 @@ const Marketplace = () => {
         return;
     }
     
-    // Find the first product in the cart to get its retailerId
     const firstProductIdInCart = Object.keys(cart)[0];
     const product = products.find(p => p._id === firstProductIdInCart);
     
@@ -88,7 +125,6 @@ const Marketplace = () => {
       return;
     }
 
-    // Since retailerId is populated in the frontend, it's an object { _id, name }
     const retailerId = product.retailerId._id || product.retailerId;
     const items = Object.entries(cart).map(([productId, quantity]) => ({ productId, quantity }));
 
@@ -144,6 +180,25 @@ const Marketplace = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 -mt-16">
+        {/* Retailer Selector */}
+        <div className="mb-6 flex items-center gap-3 overflow-x-auto pb-4 no-scrollbar">
+           <button
+              onClick={() => setActiveRetailer('All')}
+              className={`px-6 py-3 rounded-2xl font-black whitespace-nowrap transition-all shadow-sm flex items-center gap-2 ${activeRetailer === 'All' ? 'bg-amber-500 text-white scale-105 shadow-xl' : 'bg-white text-slate-500 hover:bg-amber-50 border border-slate-100'}`}
+            >
+              <Store size={18} /> All Stores
+           </button>
+           {retailers.map(r => (
+             <button
+              key={r._id}
+              onClick={() => setActiveRetailer(r._id)}
+              className={`px-6 py-3 rounded-2xl font-black whitespace-nowrap transition-all shadow-sm flex items-center gap-2 ${activeRetailer === r._id ? 'bg-amber-500 text-white scale-105 shadow-xl' : 'bg-white text-slate-500 hover:bg-amber-50 border border-slate-100'}`}
+             >
+               <Store size={18} /> {r.name}
+             </button>
+           ))}
+        </div>
+
         <div className="flex items-center gap-3 overflow-x-auto pb-8 no-scrollbar mb-10">
           {categories.map(cat => (
             <button
