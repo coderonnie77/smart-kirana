@@ -18,7 +18,7 @@ app.use('/api/orders', require('./routes/orders'));
 app.use('/api/analytics', require('./routes/analytics'));
 
 app.get('/', (req, res) => {
-  res.json({ message: "Welcome to Smart-Kirana API" });
+  res.json({ message: "Welcome to Smart-Kirana API v2.0 - Live & Updated" });
 });
 
 // Database Connection

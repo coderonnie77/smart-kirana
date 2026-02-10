@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+console.log('Using Backend API:', API_URL);
 const API = axios.create({ baseURL: API_URL });
 
 API.interceptors.request.use((req) => {
@@ -41,7 +42,8 @@ export const fetchVelocityReport = () => API.get('/analytics/velocity');
 export const fetchFinancials = () => API.get('/analytics/financials');
 
 // AI Service API
-export const fetchForecast = (retailerId) => axios.get(`http://localhost:8000/forecast/${retailerId}`);
-export const fetchRecommendations = (retailerId) => axios.get(`http://localhost:8000/recommendations/${retailerId}`);
-export const fetchPriceSuggestion = (productId) => axios.get(`http://localhost:8000/price-suggestion/${productId}`);
-export const parseVoiceText = (text) => axios.post(`http://localhost:8000/parse-voice`, { text });
+const AI_URL = import.meta.env.VITE_AI_URL || 'http://localhost:8000';
+export const fetchForecast = (retailerId) => axios.get(`${AI_URL}/forecast/${retailerId}`);
+export const fetchRecommendations = (retailerId) => axios.get(`${AI_URL}/recommendations/${retailerId}`);
+export const fetchPriceSuggestion = (productId) => axios.get(`${AI_URL}/price-suggestion/${productId}`);
+export const parseVoiceText = (text) => axios.post(`${AI_URL}/parse-voice`, { text });
