@@ -24,7 +24,10 @@ const Navbar = () => {
               <Store className="text-white w-7 h-7" />
             </div>
             <div className="flex flex-col">
-               <span className="font-black text-2xl text-slate-900 leading-none">Smart-Kirana</span>
+               <span className="font-black text-2xl text-slate-900 leading-none flex items-center gap-2">
+                 Smart-Kirana 
+                 <span className="text-[9px] bg-green-500 text-white px-1.5 rounded-md py-0.5 tracking-normal font-bold shadow-sm animate-pulse">v2.0-LIVE</span>
+               </span>
                <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] leading-none mt-1">AI Hyperlocal Platform</span>
             </div>
           </Link>
