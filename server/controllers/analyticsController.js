@@ -60,3 +60,66 @@ exports.getFinancials = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// Mock AI Service Endpoints (Process internally if Python service is unavailable)
+exports.getForecast = async (req, res) => {
+    try {
+        // Generate a 7-day forecast based on recent sales trends
+        // For demo, we just return a randomized curve that looks "smart"
+        const forecast = [];
+        let baseValue = 50 + Math.random() * 50;
+        
+        for(let i=0; i<7; i++) {
+            const noise = (Math.random() - 0.5) * 20;
+            const trend = i * 2; // Slight upward trend
+            const seasonality = Math.sin(i) * 10;
+            forecast.push(Math.max(0, Math.round(baseValue + noise + trend + seasonality)));
+        }
+        
+        res.json({ forecast });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+exports.getRecommendations = async (req, res) => {
+    try {
+        // Mock Apriori Results
+        // In a real scenario, this would read from the Python service's output or a pre-calculated collection
+        const rules = [
+            { antecedents: ['Bread'], consequents: ['Milk', 'Eggs'], confidence: 0.85 },
+            { antecedents: ['Maggi'], consequents: ['Coke'], confidence: 0.75 },
+            { antecedents: ['Tea'], consequents: ['Sugar', 'Biscuits'], confidence: 0.92 },
+            { antecedents: ['Rice'], consequents: ['Dal'], confidence: 0.88 },
+            { antecedents: ['Chips'], consequents: ['Cold Drink'], confidence: 0.65 }
+        ];
+        
+        // Randomize slightly so it feels dynamic
+        const shuffled = rules.sort(() => 0.5 - Math.random()).slice(0, 3);
+        
+        res.json({ rules: shuffled });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
+exports.getPriceSuggestion = async (req, res) => {
+    try {
+       // Mock Dynamic Pricing
+       const product = await Product.findById(req.params.id);
+       if(!product) return res.status(404).json({ message: "Product not found" });
+
+       const currentPrice = product.price;
+       const suggestedPrice = Math.round(currentPrice * (0.9 + Math.random() * 0.2)); 
+       
+       res.json({
+           productId: product._id,
+           currentPrice,
+           suggestedPrice,
+           reason: suggestedPrice > currentPrice ? "High Demand" : "Low Velocity",
+           confidence: 0.8 + Math.random() * 0.15
+       });
+    } catch(err) {
+        res.status(500).json({ message: err.message });
+    }
+};

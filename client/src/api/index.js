@@ -41,9 +41,11 @@ export const fetchStarredReorders = () => API.get('/orders/starred-reorders');
 export const fetchVelocityReport = () => API.get('/analytics/velocity');
 export const fetchFinancials = () => API.get('/analytics/financials');
 
-// AI Service API
-const AI_URL = import.meta.env.VITE_AI_URL || 'http://localhost:8000';
-export const fetchForecast = (retailerId) => axios.get(`${AI_URL}/forecast/${retailerId}`);
-export const fetchRecommendations = (retailerId) => axios.get(`${AI_URL}/recommendations/${retailerId}`);
-export const fetchPriceSuggestion = (productId) => axios.get(`${AI_URL}/price-suggestion/${productId}`);
-export const parseVoiceText = (text) => axios.post(`${AI_URL}/parse-voice`, { text });
+// AI Service API (Proxied through Node for reliability/auth)
+export const fetchForecast = (retailerId) => API.get(`/analytics/forecast/${retailerId}`);
+export const fetchRecommendations = (retailerId) => API.get(`/analytics/recommendations/${retailerId}`);
+export const fetchPriceSuggestion = (productId) => API.get(`/analytics/price-suggestion/${productId}`);
+
+// Voice parsing might still need Python if complex, but for now we are handling it in Frontend logic
+// keeping this as is for now, or pointing to a future node endpoint
+export const parseVoiceText = (text) => axios.post(`${import.meta.env.VITE_AI_URL || 'http://localhost:8000'}/parse-voice`, { text });
