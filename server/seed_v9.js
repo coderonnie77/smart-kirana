@@ -7,7 +7,7 @@ const Order = require('./models/Order');
 const B2BOrder = require('./models/B2BOrder');
 const SalesData = require('./models/SalesData');
 
-dotenv.config();
+dotenv.config({ path: __dirname + '/.env' });
 
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/smart-kirana';
 
