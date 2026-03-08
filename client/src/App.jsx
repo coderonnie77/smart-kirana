@@ -10,6 +10,7 @@ import Inventory from './pages/Inventory';
 import Orders from './pages/Orders';
 import WholesalerMarketplace from './pages/WholesalerMarketplace';
 import B2BOrders from './pages/B2BOrders';
+import Chatbot from './components/Chatbot';
 
 const PrivateRoute = ({ children, role }) => {
   const { user } = useAuth();
@@ -62,6 +63,7 @@ function App() {
               }
             />
           </Routes>
+          <Chatbot />
         </div>
       </Router>
     </AuthProvider>

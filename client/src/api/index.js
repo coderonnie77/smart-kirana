@@ -46,6 +46,61 @@ export const fetchForecast = (retailerId) => API.get(`/analytics/forecast/${reta
 export const fetchRecommendations = (retailerId) => API.get(`/analytics/recommendations/${retailerId}`);
 export const fetchPriceSuggestion = (productId) => API.get(`/analytics/price-suggestion/${productId}`);
 
-// Voice parsing might still need Python if complex, but for now we are handling it in Frontend logic
-// keeping this as is for now, or pointing to a future node endpoint
-export const parseVoiceText = (text) => axios.post(`${import.meta.env.VITE_AI_URL || 'http://localhost:8000'}/parse-voice`, { text });
+export const parseVoiceText = async (text) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const lower = text.toLowerCase();
+      
+      let action = 'add';
+      if (lower.includes('delete') || lower.includes('remove') || lower.includes('hatao') || lower.includes('nikalo') || lower.includes('kam karo')) {
+        action = 'delete';
+      } else if (lower.includes('update') || lower.includes('set')) {
+        action = 'update';
+      }
+
+      const numMatch = lower.match(/\d+/);
+      const quantity = numMatch ? parseInt(numMatch[0]) : 1;
+      
+      let unit = 'pcs';
+      if (lower.includes('kg') || lower.includes('kilo')) unit = 'kg';
+      else if (lower.includes('gram') || lower.includes('gm')) unit = 'g';
+      else if (lower.includes('liter') || lower.includes('ltr')) unit = 'L';
+      else if (lower.includes('packet') || lower.includes('pkt')) unit = 'pkt';
+
+      let item = lower.replace(/\d+/g, '')
+        .replace(/kg|kilo|gram|gm|liter|ltr|packet|pkt/g, '')
+        .replace(/add|delete|remove|update|karo|hatao|nikalo|set|please/g, '')
+        .trim();
+
+      const HINDI_DICT = {
+        'namak': 'salt', 'cheeni': 'sugar', 'chini': 'sugar', 'doodh': 'milk',
+        'chawal': 'rice', 'aata': 'flour', 'tel': 'oil', 'masale': 'spices',
+        'sabun': 'soap', 'chai': 'tea', 'biskut': 'biscuit', 'daal': 'pulse',
+        'pyaaz': 'onion', 'aalu': 'potato', 'tamatar': 'tomato',
+        'नमक': 'salt', 'चीनी': 'sugar', 'दूध': 'milk',
+        'चावल': 'rice', 'आटा': 'flour', 'तेल': 'oil', 'मसाले': 'spices',
+        'साबुन': 'soap', 'चाय': 'tea', 'बिस्कुट': 'biscuit', 'दाल': 'pulse',
+        'प्याज': 'onion', 'आलू': 'potato', 'टमाटर': 'tomato', 'मैगी': 'maggi',
+        'कोक': 'coke', 'ब्रेड': 'bread', 'अंडा': 'eggs'
+      };
+
+      const words = item.split(' ').filter(w => w.trim() !== '');
+      item = words.map(w => HINDI_DICT[w] || w).join(' ');
+
+      if (!item) {
+        throw new Error("Could not detect item name.");
+      }
+
+      resolve({
+        data: {
+          action,
+          item,
+          quantity,
+          unit
+        }
+      });
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
