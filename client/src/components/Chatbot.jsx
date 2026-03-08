@@ -1,41 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Bot, User } from 'lucide-react';
 
-const QA_PAIRS = [
-  {
-    keywords: ['delivery', 'charge', 'fees', 'fee', 'cost', 'shipping'],
-    answer: "We offer completely free hyperlocal delivery! No hidden charges or extra fees."
-  },
-  {
-    keywords: ['return', 'refund', 'cancel', 'back'],
-    answer: "You can request a return or refund within 24 hours of delivery if the items are damaged or incorrect."
-  },
-  {
-    keywords: ['retailer', 'wholesaler', 'join', 'register', 'become'],
-    answer: "To become a Retailer or Wholesaler, just log out and click on 'Register'. During registration, you can choose your account role."
-  },
-  {
-    keywords: ['mic', 'voice', 'speak', 'audio', 'hindi'],
-    answer: "Yes! You can use our Voice feature to search for products or update your inventory in both English and Hindi. Just click the Mic button."
-  },
-  {
-    keywords: ['stock', 'inventory', 'add product'],
-    answer: "If you are a retailer or wholesaler, you can manage your stock by going to the 'Inventory' section from your Dashboard menu."
-  },
-  {
-    keywords: ['bulk', 'b2b', 'wholesale', 'large'],
-    answer: "Yes, Retailers can buy in bulk from Wholesalers using the 'Quick Reorder' feature or by visiting the Wholesale Marketplace."
-  },
-  {
-    keywords: ['hello', 'hi', 'hey', 'start'],
-    answer: "Hello! I am the Smart Kirana Assistant. How can I help you regarding our site today?"
-  },
-  {
-    keywords: ['site', 'about', 'platform', 'what is'],
-    answer: "Smart Kirana is a revolutionary platform connecting Customers, Retailers, and Wholesalers using advanced AI and voice commands for hyper-local delivery."
-  }
-];
-
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
@@ -52,7 +17,7 @@ const Chatbot = () => {
     scrollToBottom();
   }, [messages, isOpen]);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
 
@@ -60,20 +25,37 @@ const Chatbot = () => {
     setMessages(prev => [...prev, { text: userMessage, sender: 'user' }]);
     setInput('');
 
-    // Simulate AI thinking
-    setTimeout(() => {
-      let botResponse = "I'm sorry, I didn't quite catch that. Could you ask about delivery, orders, features, or becoming a seller?";
-      const lowerInput = userMessage.toLowerCase();
+    setMessages(prev => [...prev, { text: "...", sender: 'bot', isTyping: true }]);
 
-      for (let qa of QA_PAIRS) {
-        if (qa.keywords.some(kw => lowerInput.includes(kw))) {
-          botResponse = qa.answer;
-          break;
-        }
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyCCzQjlOBkNnFkAPBBTz9ZQQ37-M3r4bII`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `You are the friendly Smart Kirana AI Support assistant. Make your answers extremely concise (max 2 sentences), helpful, use a friendly tone, and format in plain text. Smart Kirana is a platform connecting Customers, Retailers, and Wholesalers using AI and voice commands for hyper-local grocery delivery. The user asks: ${userMessage}`
+            }]
+          }]
+        })
+      });
+
+      const data = await response.json();
+      let botResponse = "I'm sorry, I encountered an error. Please try again.";
+      if (data.candidates && data.candidates[0].content.parts[0].text) {
+        botResponse = data.candidates[0].content.parts[0].text;
       }
 
-      setMessages(prev => [...prev, { text: botResponse, sender: 'bot' }]);
-    }, 600);
+      setMessages(prev => {
+        const withoutTyping = prev.filter(m => !m.isTyping);
+        return [...withoutTyping, { text: botResponse, sender: 'bot' }];
+      });
+    } catch (err) {
+      setMessages(prev => {
+        const withoutTyping = prev.filter(m => !m.isTyping);
+        return [...withoutTyping, { text: "I am having trouble connecting to AI services right now.", sender: 'bot' }];
+      });
+    }
   };
 
   return (
@@ -113,7 +95,7 @@ const Chatbot = () => {
               <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.sender === 'user' ? 'bg-blue-100 text-blue-600' : 'bg-slate-200 text-slate-600'}`}>
                 {msg.sender === 'user' ? <User size={14} /> : <Bot size={14} />}
               </div>
-              <div className={`p-3 rounded-2xl text-sm ${msg.sender === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-slate-700 border border-slate-100 shadow-sm rounded-tl-none font-medium'}`}>
+              <div className={`p-3 rounded-2xl text-sm ${msg.sender === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-slate-700 border border-slate-100 shadow-sm rounded-tl-none font-medium'} ${msg.isTyping ? 'animate-pulse text-2xl px-5 flex items-center justify-center tracking-widest' : ''}`}>
                 {msg.text}
               </div>
             </div>

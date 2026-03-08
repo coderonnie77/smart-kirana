@@ -9,7 +9,7 @@ exports.getProducts = async (req, res) => {
     const products = await Product.find({ 
       status: 'active',
       retailerId: { $in: retailerIds }
-    }).populate('retailerId', 'name');
+    }).populate('retailerId', 'name').sort({ createdAt: -1 });
     
     res.json(products);
   } catch (err) {
@@ -23,7 +23,7 @@ exports.getProductsByWholesaler = async (req, res) => {
     const products = await Product.find({ 
       retailerId: req.params.wholesalerId,
       status: 'active'
-    });
+    }).sort({ createdAt: -1 });
     res.json(products);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -33,7 +33,7 @@ exports.getProductsByWholesaler = async (req, res) => {
 exports.getMyProducts = async (req, res) => {
   try {
     // Owners (Retailer/Wholesaler) see all their products including drafts
-    const products = await Product.find({ retailerId: req.user.id });
+    const products = await Product.find({ retailerId: req.user.id }).sort({ createdAt: -1 });
     res.json(products);
   } catch (err) {
     res.status(500).json({ message: err.message });
