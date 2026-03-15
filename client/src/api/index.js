@@ -52,9 +52,9 @@ export const parseVoiceText = async (text) => {
       const lower = text.toLowerCase();
       
       let action = 'add';
-      if (lower.includes('delete') || lower.includes('remove') || lower.includes('hatao') || lower.includes('nikalo') || lower.includes('kam karo')) {
+      if (lower.includes('delete') || lower.includes('remove') || lower.includes('hatao') || lower.includes('nikalo') || lower.includes('kam karo') || lower.includes('रिमूव') || lower.includes('हटाओ') || lower.includes('निकालो') || lower.includes('डिलीट')) {
         action = 'delete';
-      } else if (lower.includes('update') || lower.includes('set')) {
+      } else if (lower.includes('update') || lower.includes('set') || lower.includes('अपडेट')) {
         action = 'update';
       }
 
@@ -70,6 +70,7 @@ export const parseVoiceText = async (text) => {
       let item = lower.replace(/\d+/g, '')
         .replace(/kg|kilo|gram|gm|liter|ltr|packet|pkt/g, '')
         .replace(/add|delete|remove|update|karo|hatao|nikalo|set|please/g, '')
+        .replace(/रिमूव|हटाओ|निकालो|अपडेट|डिलीट|कम|करो|प्लीज|प्लीज़|सेट|ऐड/g, '')
         .trim();
 
       const HINDI_DICT = {

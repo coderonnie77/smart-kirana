@@ -164,8 +164,8 @@ const Inventory = () => {
     if (!editingProduct) return;
     try {
       const { data } = await fetchPriceSuggestion(editingProduct._id);
-      if (data.suggested_price) {
-        setFormData({ ...formData, price: Math.round(data.suggested_price) });
+      if (data.suggestedPrice) {
+        setFormData({ ...formData, price: Math.round(data.suggestedPrice) });
       }
     } catch (err) {
       console.error(err);
@@ -301,8 +301,7 @@ const Inventory = () => {
                   <input 
                     value={formData.name} 
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
-                    className={`w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 transition-all outline-none font-bold ${user.role === 'retailer' && 'opacity-70 pointer-events-none'}`}
-                    readOnly={user.role === 'retailer'}
+                    className={`w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 transition-all outline-none font-bold`}
                     required 
                     placeholder="e.g. Sugar (चीनी)" 
                   />
@@ -313,8 +312,7 @@ const Inventory = () => {
                   <input 
                     value={formData.imageUrl} 
                     onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })} 
-                    className={`w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 transition-all outline-none font-medium text-xs text-slate-400 ${user.role === 'retailer' && 'opacity-70 pointer-events-none'}`}
-                    readOnly={user.role === 'retailer'}
+                    className={`w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 transition-all outline-none font-medium text-xs text-slate-400`}
                     placeholder="Paste Unsplash image URL here" 
                   />
                 </div>
@@ -325,8 +323,7 @@ const Inventory = () => {
                     type="number" 
                     value={formData.basePrice} 
                     onChange={(e) => setFormData({ ...formData, basePrice: e.target.value })} 
-                    className={`w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 transition-all outline-none font-bold text-lg ${user.role === 'retailer' && 'opacity-70 pointer-events-none'}`}
-                    readOnly={user.role === 'retailer'}
+                    className={`w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 transition-all outline-none font-bold text-lg`}
                     required 
                   />
                 </div>
@@ -349,8 +346,7 @@ const Inventory = () => {
                     type="number" 
                     value={formData.stock} 
                     onChange={(e) => setFormData({ ...formData, stock: e.target.value })} 
-                    className={`w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 transition-all outline-none font-bold ${user.role === 'retailer' && 'opacity-70 pointer-events-none'}`}
-                    readOnly={user.role === 'retailer'}
+                    className={`w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 transition-all outline-none font-bold`}
                     required 
                   />
                 </div>
@@ -360,8 +356,7 @@ const Inventory = () => {
                   <input 
                     value={formData.category} 
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })} 
-                    className={`w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 transition-all outline-none font-bold ${user.role === 'retailer' && 'opacity-70 pointer-events-none'}`}
-                    readOnly={user.role === 'retailer'}
+                    className={`w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 transition-all outline-none font-bold`}
                     required 
                   />
                 </div>
@@ -371,8 +366,7 @@ const Inventory = () => {
                   <input 
                     value={formData.sku} 
                     onChange={(e) => setFormData({ ...formData, sku: e.target.value })} 
-                    className={`w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 transition-all outline-none font-bold ${user.role === 'retailer' && 'opacity-70 pointer-events-none'}`}
-                    readOnly={user.role === 'retailer'}
+                    className={`w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 transition-all outline-none font-bold`}
                     required 
                   />
                 </div>
@@ -383,8 +377,7 @@ const Inventory = () => {
                     type="date" 
                     value={formData.expiryDate} 
                     onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })} 
-                    className={`w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 transition-all outline-none font-bold ${user.role === 'retailer' && 'opacity-70 pointer-events-none'}`}
-                    readOnly={user.role === 'retailer'}
+                    className={`w-full bg-slate-50 border-none rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 transition-all outline-none font-bold`}
                     required 
                   />
                 </div>

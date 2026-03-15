@@ -109,7 +109,8 @@ exports.executeVoiceAction = async (req, res) => {
       }
     } else if (action === 'delete' || action === 'remove') {
       if (product) {
-        product.stock = Math.max(0, product.stock - quantity);
+        await Product.findOneAndDelete({ _id: product._id, retailerId: req.user.id });
+        return res.json({ message: `Successfully removed ${item}`, product: null });
       }
     } else if (action === 'update') {
       if (product) {

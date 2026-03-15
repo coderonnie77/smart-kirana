@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageSquare, X, Send, Bot, User } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, User, Mic } from 'lucide-react';
+import { fetchFinancials, fetchVelocityReport } from '../api';
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -7,7 +8,40 @@ const Chatbot = () => {
     { text: "Hi! I am your Smart Kirana AI Support. Feel free to ask me anything about the platform!", sender: 'bot' }
   ]);
   const [input, setInput] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const [contextData, setContextData] = useState(null);
   const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen && !contextData) {
+      Promise.all([
+        fetchFinancials().then(r => r.data).catch(() => null),
+        fetchVelocityReport().then(r => r.data).catch(() => null)
+      ]).then(([financials, velocity]) => {
+        setContextData({ financials, velocity });
+      });
+    }
+  }, [isOpen]);
+
+  const speak = (text) => {
+    const synth = window.speechSynthesis;
+    const utterance = new SpeechSynthesisUtterance(text);
+    synth.speak(utterance);
+  };
+
+  const handleMic = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return alert("Browser does not support voice input");
+    
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN';
+    recognition.start();
+    setIsListening(true);
+    
+    recognition.onresult = (e) => setInput(e.results[0][0].transcript);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -34,7 +68,7 @@ const Chatbot = () => {
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `You are the friendly Smart Kirana AI Support assistant. Make your answers extremely concise (max 2 sentences), helpful, use a friendly tone, and format in plain text. Smart Kirana is a platform connecting Customers, Retailers, and Wholesalers using AI and voice commands for hyper-local grocery delivery. The user asks: ${userMessage}`
+              text: `You are the friendly Smart Kirana AI Support assistant. Make your answers extremely concise (max 2 sentences), helpful, use a friendly tone, and format in plain text. Smart Kirana is a platform connecting Customers, Retailers, and Wholesalers using AI and voice commands for hyper-local grocery delivery. The user asks: ${userMessage}. Here is some context about the user's business if asked: ${contextData ? JSON.stringify(contextData) : 'Not available'}. Give suggestions regarding business based on this context if requested.`
             }]
           }]
         })
@@ -50,11 +84,13 @@ const Chatbot = () => {
         const withoutTyping = prev.filter(m => !m.isTyping);
         return [...withoutTyping, { text: botResponse, sender: 'bot' }];
       });
+      speak(botResponse);
     } catch (err) {
       setMessages(prev => {
         const withoutTyping = prev.filter(m => !m.isTyping);
         return [...withoutTyping, { text: "I am having trouble connecting to AI services right now.", sender: 'bot' }];
       });
+      speak("I am having trouble connecting to AI services right now.");
     }
   };
 
@@ -112,6 +148,13 @@ const Chatbot = () => {
             placeholder="Ask about delivery, orders..."
             className="flex-1 bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
           />
+          <button 
+            type="button" 
+            onClick={handleMic}
+            className={`p-3 rounded-xl transition-colors ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+          >
+            <Mic size={18} />
+          </button>
           <button 
             type="submit" 
             disabled={!input.trim()}
