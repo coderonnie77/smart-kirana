@@ -26,6 +26,7 @@ const Chatbot = () => {
   const speak = (text) => {
     const synth = window.speechSynthesis;
     const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'hi-IN'; // Speak in Hindi natively
     synth.speak(utterance);
   };
 
@@ -62,13 +63,13 @@ const Chatbot = () => {
     setMessages(prev => [...prev, { text: "...", sender: 'bot', isTyping: true }]);
 
     try {
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyCCzQjlOBkNnFkAPBBTz9ZQQ37-M3r4bII`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyCCzQjlOBkNnFkAPBBTz9ZQQ37-M3r4bII`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `You are the friendly Smart Kirana AI Support assistant. Make your answers extremely concise (max 2 sentences), helpful, use a friendly tone, and format in plain text. Smart Kirana is a platform connecting Customers, Retailers, and Wholesalers using AI and voice commands for hyper-local grocery delivery. The user asks: ${userMessage}. Here is some context about the user's business if asked: ${contextData ? JSON.stringify(contextData) : 'Not available'}. Give suggestions regarding business based on this context if requested.`
+              text: `You are the friendly Smart Kirana AI Support assistant. Make your answers extremely concise (max 2 sentences), helpful, use a friendly tone, and format in plain text. Reply primarily in Hindi so local retailers can understand easily. Smart Kirana is a platform connecting Customers, Retailers, and Wholesalers using AI and voice commands for hyper-local grocery delivery. The user asks: ${userMessage}. Here is some context about the user's business if asked: ${contextData ? JSON.stringify(contextData) : 'Not available'}. Give suggestions regarding business based on this context if requested.`
             }]
           }]
         })

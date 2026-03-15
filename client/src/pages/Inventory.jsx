@@ -160,17 +160,6 @@ const Inventory = () => {
     }
   };
 
-  const suggestPrice = async () => {
-    if (!editingProduct) return;
-    try {
-      const { data } = await fetchPriceSuggestion(editingProduct._id);
-      if (data.suggestedPrice) {
-        setFormData({ ...formData, price: Math.round(data.suggestedPrice) });
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   const resetForm = () => {
     setFormData({ name: '', price: '', basePrice: '', stock: '', category: '', sku: '', expiryDate: '', minStockThreshold: 10, imageUrl: '', specifications: '', status: 'active' });
@@ -329,13 +318,8 @@ const Inventory = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-black text-slate-500 px-1 flex justify-between">
+                  <label className="text-sm font-black text-slate-500 px-1">
                     Selling Price
-                    {editingProduct && (
-                      <button type="button" onClick={suggestPrice} className="text-blue-600 flex items-center gap-1 hover:underline">
-                        <Wand2 size={12} /> AI Suggest
-                      </button>
-                    )}
                   </label>
                   <input type="number" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} className="w-full bg-slate-100 border-none rounded-2xl p-4 focus:ring-2 focus:ring-blue-500 transition-all outline-none font-bold text-lg text-blue-600" required />
                 </div>
