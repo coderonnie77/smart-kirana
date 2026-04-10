@@ -33,13 +33,6 @@ const Marketplace = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentScreenshot, setPaymentScreenshot] = useState(null);
-  const [cart, setCart] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeCategory, setActiveCategory] = useState('All');
-  const [orderStatus, setOrderStatus] = useState(null);
-  const [isListening, setIsListening] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const categories = ['All', ...new Set(products.map(p => p.category))];
 
