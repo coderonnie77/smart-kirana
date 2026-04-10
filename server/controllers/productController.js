@@ -111,10 +111,14 @@ exports.executeVoiceAction = async (req, res) => {
       if (product) {
         await Product.findOneAndDelete({ _id: product._id, retailerId: req.user.id });
         return res.json({ message: `Successfully removed ${item}`, product: null });
+      } else {
+        return res.status(404).json({ message: `Could not find an item matching ${item}` });
       }
     } else if (action === 'update') {
       if (product) {
         product.stock = quantity;
+      } else {
+        return res.status(404).json({ message: `Could not find an item matching ${item}` });
       }
     }
 

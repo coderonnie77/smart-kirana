@@ -131,7 +131,11 @@ const Inventory = () => {
           loadData();
         }
       } catch (err) {
-        alert("AI could not parse the command. Try: '5 kg rice add karo' or 'chiini 2 kg delete karo'");
+        if (err.response && err.response.status === 404) {
+             alert(err.response.data.message);
+        } else {
+             alert("AI could not parse the command. Try: '5 kg rice add karo' or 'chiini 2 kg delete karo'");
+        }
       }
     };
 
@@ -228,7 +232,7 @@ const Inventory = () => {
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
                         <div className="w-14 h-14 bg-slate-100 rounded-xl overflow-hidden flex items-center justify-center">
-                          {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" alt="" /> : <Package size={24} className="text-slate-300" />}
+                          {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" alt="" /> : <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&size=400`} alt="" className="w-full h-full object-cover" />}
                         </div>
                         <div>
                           <p className="font-bold text-slate-900">{p.name}</p>

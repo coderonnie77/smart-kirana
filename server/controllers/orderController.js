@@ -264,7 +264,9 @@ exports.processCustomerOrder = async (req, res) => {
       retailerId,
       items: processedItems,
       totalAmount,
-      status: 'pending'
+      status: 'pending',
+      paymentScreenshot: req.body.paymentScreenshot || null,
+      paymentStatus: req.body.paymentScreenshot ? 'uploaded' : 'pending'
     });
     
     await order.save();

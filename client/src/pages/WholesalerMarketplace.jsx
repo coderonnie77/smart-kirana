@@ -153,7 +153,7 @@ const WholesalerMarketplace = () => {
                   <div key={p._id} className="bg-white p-8 rounded-[2.5rem] shadow-premium border border-slate-50 group">
                     <div className="flex items-center gap-6 mb-8">
                       <div className="w-20 h-20 bg-slate-100 rounded-3xl overflow-hidden flex items-center justify-center">
-                        {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <Package size={32} className="text-slate-300" />}
+                        {p.imageUrl ? <img src={p.imageUrl} className="w-full h-full object-cover" /> : <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=random&size=400`} className="w-full h-full object-cover" />}
                       </div>
                       <div>
                         <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{p.category}</span>

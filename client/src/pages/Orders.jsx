@@ -146,10 +146,20 @@ const Orders = () => {
                    ) : (
                        <div className="flex justify-between items-center w-full italic text-slate-400 text-sm">
                           <span>कुल राशि (Total Amount):</span>
-                          <span className="text-3xl font-black text-slate-900 not-italic">₹{order.totalAmount.toLocaleString()}</span>
+                          <span className="text-3xl font-black text-slate-900 not-italic">₹{order.totalAmount?.toLocaleString()}</span>
                        </div>
                    )}
                 </div>
+
+                {/* Payment Screenshot Section */}
+                {user.role === 'retailer' && order.paymentScreenshot && (
+                  <div className="mt-6 pt-6 border-t border-slate-50">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Customer Payment Screenshot (UPI)</p>
+                    <div className="rounded-2xl overflow-hidden border-2 border-slate-100 bg-slate-50 w-full lg:w-1/2">
+                      <img src={order.paymentScreenshot} alt="Payment Proof" className="w-full h-auto object-contain max-h-64" />
+                    </div>
+                  </div>
+                )}
               </div>
             )) : (
               <div className="bg-white rounded-[3rem] py-24 text-center border-2 border-dashed border-slate-100">

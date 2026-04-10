@@ -22,8 +22,17 @@ const Marketplace = () => {
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [retailers, setRetailers] = useState([]);
-  const [activeRetailer, setActiveRetailer] = useState('All');
+  const [activeRetailer, setActiveRetailer] = useState(null);
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [cart, setCart] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [orderStatus, setOrderStatus] = useState(null);
+  const [isListening, setIsListening] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentScreenshot, setPaymentScreenshot] = useState(null);
   const [cart, setCart] = useState({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -56,7 +65,7 @@ const Marketplace = () => {
   useEffect(() => {
     let result = products;
 
-    if (activeRetailer !== 'All') {
+    if (activeRetailer && activeRetailer !== 'All') {
       result = result.filter(p => {
         const rId = p.retailerId?._id || p.retailerId;
         return rId === activeRetailer;
@@ -129,7 +138,14 @@ const Marketplace = () => {
       alert("Please login to place an order");
       return;
     }
+    setShowPaymentModal(true);
+  };
 
+  const confirmCheckout = async () => {
+    if (!paymentScreenshot) {
+      alert("Please upload the payment screenshot to proceed.");
+      return;
+    }
     const firstProductIdInCart = Object.keys(cart)[0];
     const product = products.find(p => p._id === firstProductIdInCart);
 
@@ -142,13 +158,24 @@ const Marketplace = () => {
     const items = Object.entries(cart).map(([productId, quantity]) => ({ productId, quantity }));
 
     try {
-      await createOrder({ items, retailerId });
+      await createOrder({ items, retailerId, paymentScreenshot });
       setOrderStatus('success');
       setCart({});
+      setShowPaymentModal(false);
+      setPaymentScreenshot(null);
       setTimeout(() => setOrderStatus(null), 4000);
     } catch (err) {
       console.error("Checkout Error:", err);
       alert(err.response?.data?.message || err.message || 'Error placing order');
+    }
+  };
+
+  const handleScreenshotUpload = (e) => {
+    const file = e.target.files[0];
+    if(file){
+      const reader = new FileReader();
+      reader.onloadend = () => setPaymentScreenshot(reader.result);
+      reader.readAsDataURL(file);
     }
   };
 
@@ -202,7 +229,7 @@ const Marketplace = () => {
             <div className="flex flex-col">
               <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Select Store</span>
               <select
-                value={activeRetailer}
+                value={activeRetailer || 'All'}
                 onChange={(e) => setActiveRetailer(e.target.value)}
                 className="font-black text-lg sm:text-xl text-slate-900 bg-transparent border-none focus:ring-0 p-0 cursor-pointer min-w-[200px] outline-none"
               >
@@ -273,7 +300,7 @@ const Marketplace = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 animate-in fade-in duration-300">
           <div className="bg-white max-w-2xl w-full rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] relative overflow-hidden animate-in zoom-in-95 duration-500">
             <div className="h-64 relative">
-              <img src={selectedProduct.imageUrl} className="w-full h-full object-cover" alt="" />
+              <img src={selectedProduct.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedProduct.name)}&background=random&size=400`} className="w-full h-full object-cover" alt="" />
               <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
               <button onClick={() => setSelectedProduct(null)} className="absolute top-6 right-6 p-4 bg-white/80 backdrop-blur rounded-2xl text-slate-900 shadow-xl hover:scale-110 transition-transform"><X /></button>
             </div>
@@ -309,6 +336,55 @@ const Marketplace = () => {
         </div>
       )}
 
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <div className="bg-white max-w-md w-full rounded-[2.5rem] p-8 relative shadow-2xl animate-in zoom-in-95 duration-500">
+            <button onClick={() => setShowPaymentModal(false)} className="absolute top-6 right-6 p-3 bg-slate-100 rounded-full hover:bg-slate-200 transition-all"><X size={20}/></button>
+            <h2 className="text-3xl font-black mb-4 tracking-tighter">Pay with UPI</h2>
+            <p className="text-slate-500 font-medium mb-6">Scan the QR code to complete your payment, then upload the screenshot.</p>
+            <div className="bg-slate-50 p-6 rounded-[2rem] flex flex-col items-center mb-6 border border-slate-100">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" alt="UPI QR" className="w-48 h-48 mix-blend-multiply mb-4" />
+              <p className="font-black text-2xl text-blue-600 tracking-tighter text-center">₹{totalPrice.toLocaleString()}</p>
+            </div>
+            
+            <label className="block text-sm font-bold text-slate-700 mb-3 px-1">Upload Payment Screenshot</label>
+            <input type="file" accept="image/*" onChange={handleScreenshotUpload} className="w-full mb-6 text-sm file:mr-4 file:py-3 file:px-6 file:rounded-2xl file:border-0 file:text-sm file:font-black file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 transition-all cursor-pointer" />
+            
+            {paymentScreenshot && (
+              <div className="relative mb-6 rounded-[1.5rem] overflow-hidden border-2 border-slate-100">
+                <img src={paymentScreenshot} className="w-full h-40 object-cover" />
+              </div>
+            )}
+            
+            <button onClick={confirmCheckout} className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-xl shadow-xl hover:bg-blue-600 transition-all">Complete Order</button>
+          </div>
+        </div>
+      )}
+
+      {user?.role === 'customer' && !activeRetailer && retailers.length > 0 && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/60 backdrop-blur-xl p-4 animate-in fade-in duration-500">
+          <div className="bg-white max-w-2xl w-full rounded-[3rem] p-10 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] animate-in zoom-in-95 duration-500">
+            <h2 className="text-4xl font-black mb-3 tracking-tighter">Choose a Store</h2>
+            <p className="text-slate-500 font-medium mb-8 text-lg">Please pick a nearby store to start shopping for groceries.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+              {retailers.map(r => (
+                <button 
+                  key={r._id} 
+                  onClick={() => setActiveRetailer(r._id)} 
+                  className="p-6 border-2 border-slate-100 rounded-[2rem] hover:border-blue-600 hover:bg-blue-50 transition-all duration-300 text-left group"
+                >
+                  <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-colors mb-4">
+                    <Store size={20} />
+                  </div>
+                  <h3 className="font-black text-xl text-slate-800 tracking-tight group-hover:text-blue-600">{r.name}</h3>
+                  <p className="text-sm text-slate-500 font-medium mt-1">{r.address || 'Local Neighborhood Store'}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {orderStatus === 'success' && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-white/90 backdrop-blur-3xl animate-in fade-in duration-500">
           <div className="text-center">
@@ -338,10 +414,10 @@ const ProductCard = ({ product, quantity, onAdd, onRemove, onInfo }) => (
   <div className="bg-white rounded-[2.5rem] p-6 shadow-[0_20px_50px_-10px_rgba(0,0,0,0.05)] hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)] transition-all duration-500 border border-slate-50 group flex flex-col relative overflow-hidden">
     <div className="aspect-[4/5] bg-slate-100 rounded-[2rem] mb-6 relative overflow-hidden">
       <img
-        src={product.imageUrl}
+        src={product.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(product.name)}&background=random&size=400`}
         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
         alt={product.name}
-        onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400'; }}
+        onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(product.name)}&background=random&size=400`; }}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       <button
