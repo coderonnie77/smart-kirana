@@ -58,20 +58,47 @@ export const parseVoiceText = async (text) => {
         action = 'update';
       }
 
+      // Parse quantity (digits or words)
+      let quantity = 1;
       const numMatch = lower.match(/\d+/);
-      const quantity = numMatch ? parseInt(numMatch[0]) : 1;
       
+      const WORD_NUMBERS = {
+        'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 
+        'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
+        'ek': 1, 'do': 2, 'teen': 3, 'char': 4, 'paanch': 5, 
+        'chhe': 6, 'saat': 7, 'aath': 8, 'nau': 9, 'dus': 10,
+        'एक': 1, 'दो': 2, 'तीन': 3, 'चार': 4, 'पांच': 5, 
+        'छह': 6, 'सात': 7, 'आठ': 8, 'नौ': 9, 'दस': 10,
+        'वन': 1, 'टू': 2, 'थ्री': 3, 'फोर': 4, 'फाइव': 5
+      };
+
+      if (numMatch) {
+        quantity = parseInt(numMatch[0]);
+      } else {
+        const tokens = lower.split(/\s+/);
+        for (let w of tokens) {
+          if (WORD_NUMBERS[w]) {
+             quantity = WORD_NUMBERS[w];
+             break;
+          }
+        }
+      }
       let unit = 'pcs';
       if (lower.includes('kg') || lower.includes('kilo')) unit = 'kg';
       else if (lower.includes('gram') || lower.includes('gm')) unit = 'g';
       else if (lower.includes('liter') || lower.includes('ltr')) unit = 'L';
       else if (lower.includes('packet') || lower.includes('pkt')) unit = 'pkt';
 
-      let item = lower.replace(/\d+/g, '')
-        .replace(/kg|kilo|gram|gm|liter|ltr|packet|pkt|quantity|qty/g, '')
-        .replace(/add|delete|remove|update|karo|hatao|nikalo|set|please|insert|create/g, '')
-        .replace(/रिमूव|हटाओ|निकालो|अपडेट|डिलीट|कम|करो|प्लीज|प्लीज़|सेट|ऐड|एड|जोड़ें|बनाएं|क्वांटिटी|मात्रा/g, '')
-        .trim();
+      let itemTokens = lower.replace(/\d+/g, ' ')
+        .replace(/kg|kilo|gram|gm|liter|ltr|packet|pkt|quantity|qty/g, ' ')
+        .replace(/add|delete|remove|update|karo|hatao|nikalo|set|please|insert|create/g, ' ')
+        .replace(/रिमूव|हटाओ|निकालो|अपडेट|डिलीट|कम|करो|प्लीज|प्लीज़|सेट|ऐड|एड|जोड़ें|बनाएं|क्वांटिटी|मात्रा/g, ' ')
+        .replace(/of|for|to|the|a|in|ऑफ़|ऑफ|का|की|के|में|को/g, ' ')
+        .split(/\s+/);
+      
+      // Also filter out word-numbers from the final item name
+      itemTokens = itemTokens.filter(w => w.trim() !== '' && !WORD_NUMBERS[w]);
+      let item = itemTokens.join(' ').trim();
 
       const HINDI_DICT = {
         'namak': 'salt', 'cheeni': 'sugar', 'chini': 'sugar', 'doodh': 'milk',
