@@ -68,9 +68,9 @@ export const parseVoiceText = async (text) => {
       else if (lower.includes('packet') || lower.includes('pkt')) unit = 'pkt';
 
       let item = lower.replace(/\d+/g, '')
-        .replace(/kg|kilo|gram|gm|liter|ltr|packet|pkt/g, '')
-        .replace(/add|delete|remove|update|karo|hatao|nikalo|set|please/g, '')
-        .replace(/रिमूव|हटाओ|निकालो|अपडेट|डिलीट|कम|करो|प्लीज|प्लीज़|सेट|ऐड/g, '')
+        .replace(/kg|kilo|gram|gm|liter|ltr|packet|pkt|quantity|qty/g, '')
+        .replace(/add|delete|remove|update|karo|hatao|nikalo|set|please|insert|create/g, '')
+        .replace(/रिमूव|हटाओ|निकालो|अपडेट|डिलीट|कम|करो|प्लीज|प्लीज़|सेट|ऐड|एड|जोड़ें|बनाएं|क्वांटिटी|मात्रा/g, '')
         .trim();
 
       const HINDI_DICT = {
