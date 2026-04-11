@@ -126,7 +126,8 @@ const Inventory = () => {
       setIsVoiceActive(false);
       try {
         const { data: parsed } = await parseVoiceText(transcript);
-        if (window.confirm(`Voice AI detected request in Hindi/English: \n"${transcript}"\n\nAction: ${parsed.action.toUpperCase()}\nItem: ${parsed.item}\nQuantity: ${parsed.quantity} ${parsed.unit}\n\nConfirm update?`)) {
+        const priceStr = parsed.price ? `\nPrice: ₹${parsed.price}` : '';
+        if (window.confirm(`Voice AI detected request in Hindi/English: \n"${transcript}"\n\nAction: ${parsed.action.toUpperCase()}\nItem: ${parsed.item}\nQuantity: ${parsed.quantity} ${parsed.unit}${priceStr}\n\nConfirm update?`)) {
           await executeVoiceAction(parsed);
           loadData();
         }

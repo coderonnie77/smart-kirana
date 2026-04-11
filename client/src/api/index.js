@@ -92,17 +92,17 @@ export const parseVoiceText = async (text) => {
         }
       }
       let unit = 'pcs';
-      if (lower.includes('kg') || lower.includes('kilo') || lower.includes('किलो')) unit = 'kg';
+      if (lower.includes('kg') || lower.includes('kilo') || lower.includes('किलो') || lower.includes('केजी')) unit = 'kg';
       else if (lower.includes('gram') || lower.includes('gm') || lower.includes('ग्राम')) unit = 'g';
       else if (lower.includes('liter') || lower.includes('ltr') || lower.includes('लीटर')) unit = 'L';
       else if (lower.includes('packet') || lower.includes('pkt') || lower.includes('पैकेट')) unit = 'pkt';
 
       let itemTokens = lower.replace(/\d+/g, ' ')
-        .replace(/kg|kilo|gram|gm|liter|ltr|packet|pkt|quantity|qty|किलो|ग्राम|लीटर|पैकेट/g, ' ')
+        .replace(/kg|kilo|gram|gm|liter|ltr|packet|pkt|quantity|qty|किलो|केजी|ग्राम|लीटर|पैकेट/g, ' ')
         .replace(/at|एट|price|प्राइस|rupees|रुपये|rs|₹|रु/g, ' ')
         .replace(/add|delete|remove|update|karo|hatao|nikalo|set|please|insert|create/g, ' ')
         .replace(/रिमूव|हटाओ|निकालो|अपडेट|डिलीट|कम|करो|प्लीज|प्लीज़|सेट|ऐड|एड|जोड़ें|बनाएं|क्वांटिटी|मात्रा/g, ' ')
-        .replace(/of|for|to|the|a|in|ऑफ़|ऑफ|का|की|के|में|को/g, ' ')
+        .replace(/(?:^|\s)(of|for|to|the|a|in|ऑफ़|ऑफ|का|की|के|में|को)(?=\s|$)/g, ' ')
         .split(/\s+/);
       
       // Also filter out word-numbers from the final item name
