@@ -336,7 +336,8 @@ const Marketplace = () => {
             <h2 className="text-3xl font-black mb-4 tracking-tighter">Pay with UPI</h2>
             <p className="text-slate-500 font-medium mb-6">Scan the QR code to complete your payment, then upload the screenshot.</p>
             <div className="bg-slate-50 p-6 rounded-[2rem] flex flex-col items-center mb-6 border border-slate-100">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" alt="UPI QR" className="w-48 h-48 mix-blend-multiply mb-4" />
+              <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=upi://pay?pa=adarshdeshmukh076@oksbi&pn=Adarsh%20Deshmukh" alt="Adarsh Deshmukh UPI QR" className="w-56 h-56 mix-blend-multiply mb-4" />
+              <p className="text-slate-400 text-xs font-bold mb-2">UPI ID: adarshdeshmukh076@oksbi</p>
               <p className="font-black text-2xl text-blue-600 tracking-tighter text-center">₹{totalPrice.toLocaleString()}</p>
             </div>
             
