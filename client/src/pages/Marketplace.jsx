@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { fetchProducts, createOrder, fetchRetailers } from '../api';
-import { ShoppingBasket, Plus, Minus, Search, Tag, Filter, CheckCircle2, Mic, MicOff, Info, X, Calendar, Hash, FileText, ChevronRight, Store } from 'lucide-react';
+import { fetchProducts, fetchRetailers, createRazorpayOrder, verifyRazorpayPayment } from '../api';
+import { ShoppingBasket, Plus, Minus, Search, Tag, Filter, CheckCircle2, Mic, MicOff, Info, X, Calendar, Hash, FileText, ChevronRight, Store, CreditCard, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const HINDI_DICT = {
@@ -32,7 +32,6 @@ const Marketplace = () => {
   const [isListening, setIsListening] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentScreenshot, setPaymentScreenshot] = useState(null);
 
   const categories = ['All', ...new Set(products.map(p => p.category))];
 
@@ -134,11 +133,7 @@ const Marketplace = () => {
     setShowPaymentModal(true);
   };
 
-  const confirmCheckout = async () => {
-    if (!paymentScreenshot) {
-      alert("Please upload the payment screenshot to proceed.");
-      return;
-    }
+  const handleRazorpayPayment = async () => {
     const firstProductIdInCart = Object.keys(cart)[0];
     const product = products.find(p => p._id === firstProductIdInCart);
 
@@ -151,24 +146,77 @@ const Marketplace = () => {
     const items = Object.entries(cart).map(([productId, quantity]) => ({ productId, quantity }));
 
     try {
-      await createOrder({ items, retailerId, paymentScreenshot });
-      setOrderStatus('success');
-      setCart({});
-      setShowPaymentModal(false);
-      setPaymentScreenshot(null);
-      setTimeout(() => setOrderStatus(null), 4000);
+      setLoading(true);
+      // 1. Create Order on Backend & get Razorpay details
+      const orderRes = await createRazorpayOrder({ items, retailerId });
+      const { orderId, razorpayOrderId, amount, currency, isMock } = orderRes.data;
+
+      // 2. Configure and open Razorpay checkout
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_mockkey',
+        amount: amount,
+        currency: currency,
+        name: "Smart Kirana",
+        description: `Order from ${product.retailerId?.name || 'Retailer'}`,
+        order_id: razorpayOrderId,
+        handler: async function (response) {
+          try {
+            setLoading(true);
+            // 3. Verify Payment on Backend
+            await verifyRazorpayPayment({
+              orderId,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature
+            });
+            
+            setOrderStatus('success');
+            setCart({});
+            setShowPaymentModal(false);
+            setTimeout(() => setOrderStatus(null), 4000);
+          } catch (verifyErr) {
+            console.error("Verification failed:", verifyErr);
+            alert("Payment verification failed! Please contact support.");
+          } finally {
+            setLoading(false);
+          }
+        },
+        prefill: {
+          name: user?.name || "Customer",
+          email: user?.email || "customer@example.com",
+          contact: user?.phone || "9999999999"
+        },
+        theme: {
+          color: "#2563eb"
+        },
+        modal: {
+          ondismiss: function () {
+            alert("Payment cancelled.");
+            setLoading(false);
+          }
+        }
+      };
+
+      if (isMock) {
+        const confirmMock = window.confirm("Razorpay credentials not set on server. Simulate successful payment test?");
+        if (confirmMock) {
+          await options.handler({
+            razorpay_order_id: razorpayOrderId,
+            razorpay_payment_id: "pay_mock123456",
+            razorpay_signature: "sig_mock123456"
+          });
+        } else {
+          setLoading(false);
+        }
+      } else {
+        const rzp1 = new window.Razorpay(options);
+        rzp1.open();
+      }
     } catch (err) {
       console.error("Checkout Error:", err);
-      alert(err.response?.data?.message || err.message || 'Error placing order');
-    }
-  };
-
-  const handleScreenshotUpload = (e) => {
-    const file = e.target.files[0];
-    if(file){
-      const reader = new FileReader();
-      reader.onloadend = () => setPaymentScreenshot(reader.result);
-      reader.readAsDataURL(file);
+      alert(err.response?.data?.message || err.message || 'Error initiating checkout');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -333,24 +381,31 @@ const Marketplace = () => {
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 animate-in fade-in duration-300">
           <div className="bg-white max-w-md w-full rounded-[2.5rem] p-8 relative shadow-2xl animate-in zoom-in-95 duration-500">
             <button onClick={() => setShowPaymentModal(false)} className="absolute top-6 right-6 p-3 bg-slate-100 rounded-full hover:bg-slate-200 transition-all"><X size={20}/></button>
-            <h2 className="text-3xl font-black mb-4 tracking-tighter">Pay with UPI</h2>
-            <p className="text-slate-500 font-medium mb-6">Scan the QR code to complete your payment, then upload the screenshot.</p>
-            <div className="bg-slate-50 p-6 rounded-[2rem] flex flex-col items-center mb-6 border border-slate-100">
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=upi://pay?pa=adarshdeshmukh076@oksbi&pn=Adarsh%20Deshmukh" alt="Adarsh Deshmukh UPI QR" className="w-56 h-56 mix-blend-multiply mb-4" />
-              <p className="text-slate-400 text-xs font-bold mb-2">UPI ID: adarshdeshmukh076@oksbi</p>
-              <p className="font-black text-2xl text-blue-600 tracking-tighter text-center">₹{totalPrice.toLocaleString()}</p>
+            <h2 className="text-3xl font-black mb-2 tracking-tighter">Secure Checkout</h2>
+            <p className="text-slate-500 font-medium mb-6 text-sm">Pay securely via Razorpay payment gateway using Card, UPI, Netbanking, or Wallet.</p>
+            
+            <div className="bg-slate-50 p-6 rounded-[2rem] mb-6 border border-slate-100">
+              <div className="flex items-center justify-between mb-4 pb-4 border-b border-slate-200/60">
+                <span className="text-slate-400 font-bold text-sm">Total items</span>
+                <span className="font-black text-slate-800 text-lg">{totalItems}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400 font-bold text-sm">Amount to Pay</span>
+                <span className="font-black text-2xl text-blue-600 tracking-tighter">₹{totalPrice.toLocaleString()}</span>
+              </div>
             </div>
             
-            <label className="block text-sm font-bold text-slate-700 mb-3 px-1">Upload Payment Screenshot</label>
-            <input type="file" accept="image/*" onChange={handleScreenshotUpload} className="w-full mb-6 text-sm file:mr-4 file:py-3 file:px-6 file:rounded-2xl file:border-0 file:text-sm file:font-black file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100 transition-all cursor-pointer" />
+            <div className="flex items-center gap-3 bg-emerald-50 text-emerald-700 px-5 py-4 rounded-2xl border border-emerald-100 mb-6">
+              <ShieldCheck size={24} className="text-emerald-500 shrink-0" />
+              <span className="text-xs font-bold leading-snug">Your transaction is encrypted and secured by Razorpay industry-standard safety protocols.</span>
+            </div>
             
-            {paymentScreenshot && (
-              <div className="relative mb-6 rounded-[1.5rem] overflow-hidden border-2 border-slate-100">
-                <img src={paymentScreenshot} className="w-full h-40 object-cover" />
-              </div>
-            )}
-            
-            <button onClick={confirmCheckout} className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-xl shadow-xl hover:bg-blue-600 transition-all">Complete Order</button>
+            <button 
+              onClick={handleRazorpayPayment} 
+              className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-xl shadow-xl hover:bg-blue-600 transition-all flex items-center justify-center gap-3"
+            >
+              <CreditCard size={20} /> Pay with Razorpay
+            </button>
           </div>
         </div>
       )}

@@ -151,14 +151,39 @@ const Orders = () => {
                    )}
                 </div>
 
-                {/* Payment Screenshot Section */}
-                {user.role === 'retailer' && order.paymentScreenshot && (
-                  <div className="mt-6 pt-6 border-t border-slate-50">
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Customer Payment Screenshot (UPI)</p>
-                    <div className="rounded-2xl overflow-hidden border-2 border-slate-100 bg-slate-50 w-full lg:w-1/2">
-                      <img src={order.paymentScreenshot} alt="Payment Proof" className="w-full h-auto object-contain max-h-64" />
+                {/* Payment Screenshot or Razorpay Info Section */}
+                {order.paymentMethod === 'razorpay' ? (
+                  <div className="mt-6 pt-6 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50 p-6 rounded-2xl">
+                    <div>
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">भुगतान विधि (Payment Method)</p>
+                      <p className="font-bold text-slate-900 text-sm">Razorpay Secure Gateway</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Razorpay Order ID</p>
+                      <p className="font-bold text-slate-500 text-xs">#{order.razorpayOrderId || 'N/A'}</p>
+                    </div>
+                    {order.razorpayPaymentId && (
+                      <div>
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Transaction ID</p>
+                        <p className="font-bold text-slate-500 text-xs">#{order.razorpayPaymentId}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">भुगतान की स्थिति (Payment Status)</p>
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase ${order.paymentStatus === 'paid' ? 'bg-emerald-100 text-emerald-800' : order.paymentStatus === 'failed' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}`}>
+                        {order.paymentStatus === 'paid' ? 'Verified & Paid' : order.paymentStatus === 'failed' ? 'Failed' : 'Pending Payment'}
+                      </span>
                     </div>
                   </div>
+                ) : (
+                  user.role === 'retailer' && order.paymentScreenshot && (
+                    <div className="mt-6 pt-6 border-t border-slate-50">
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Customer Payment Screenshot (UPI)</p>
+                      <div className="rounded-2xl overflow-hidden border-2 border-slate-100 bg-slate-50 w-full lg:w-1/2">
+                        <img src={order.paymentScreenshot} alt="Payment Proof" className="w-full h-auto object-contain max-h-64" />
+                      </div>
+                    </div>
+                  )
                 )}
               </div>
             )) : (

@@ -291,3 +291,146 @@ exports.updateB2BOrderStatus = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+const Razorpay = require('razorpay');
+
+const getRazorpayInstance = () => {
+  if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+    console.warn("Razorpay credentials missing in environment variables. Using mockup mode.");
+    return null;
+  }
+  return new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET
+  });
+};
+
+exports.createRazorpayOrder = async (req, res) => {
+  try {
+    const { items, retailerId } = req.body;
+    let totalAmount = 0;
+    
+    const processedItems = [];
+    for (const item of items) {
+      const product = await Product.findById(item.productId);
+      if (!product) {
+        return res.status(404).json({ message: `Product not found` });
+      }
+      if (product.stock < item.quantity) {
+        return res.status(400).json({ message: `Insufficient stock for ${product.name}` });
+      }
+      
+      const price = product.price;
+      totalAmount += price * item.quantity;
+      processedItems.push({
+        productId: item.productId,
+        name: product.name,
+        quantity: item.quantity,
+        priceAtPurchase: price
+      });
+    }
+
+    const rzp = getRazorpayInstance();
+    let rzpOrderId = `mock_rzp_${Date.now()}`;
+    
+    if (rzp) {
+      const options = {
+        amount: Math.round(totalAmount * 100), // paise
+        currency: "INR",
+        receipt: `rcpt_${Date.now().toString().slice(-6)}`
+      };
+      const rzpOrder = await rzp.orders.create(options);
+      rzpOrderId = rzpOrder.id;
+    }
+
+    const order = new Order({
+      customerId: req.user.id,
+      retailerId,
+      items: processedItems,
+      totalAmount,
+      paymentMethod: 'razorpay',
+      paymentStatus: 'pending',
+      razorpayOrderId: rzpOrderId,
+      status: 'pending'
+    });
+
+    await order.save();
+
+    res.status(201).json({
+      orderId: order._id,
+      razorpayOrderId: rzpOrderId,
+      amount: totalAmount * 100, // paise
+      currency: "INR",
+      isMock: !rzp
+    });
+  } catch (err) {
+    console.error("Error creating Razorpay order:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.verifyRazorpayPayment = async (req, res) => {
+  try {
+    const { orderId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
+    
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    if (order.paymentStatus === 'paid') {
+      return res.json({ message: "Payment already verified", order });
+    }
+
+    const rzp = getRazorpayInstance();
+    
+    if (rzp) {
+      const crypto = require('crypto');
+      const text = razorpayOrderId + "|" + razorpayPaymentId;
+      const expectedSignature = crypto
+        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+        .update(text)
+        .digest('hex');
+
+      if (expectedSignature !== razorpaySignature) {
+        order.paymentStatus = 'failed';
+        await order.save();
+        return res.status(400).json({ message: "Invalid payment signature" });
+      }
+    } else {
+      console.log("Mock verify: assuming payment succeeded for testing.");
+    }
+
+    // Payment verified: update stock and record sales
+    const transactionId = new mongoose.Types.ObjectId().toString();
+    for (const item of order.items) {
+      const product = await Product.findById(item.productId);
+      if (!product || product.stock < item.quantity) {
+        return res.status(400).json({ message: `Insufficient stock for ${product?.name || 'item'} to finalize order` });
+      }
+      
+      product.stock -= item.quantity;
+      await product.save();
+
+      // Log Sales Data for AI
+      await new SalesData({
+        productId: item.productId,
+        transactionId,
+        quantity: item.quantity,
+        priceAtSale: item.priceAtPurchase,
+        retailerId: order.retailerId
+      }).save();
+    }
+
+    order.paymentStatus = 'paid';
+    order.razorpayPaymentId = razorpayPaymentId;
+    order.razorpaySignature = razorpaySignature;
+    order.status = 'processing';
+    await order.save();
+
+    res.json({ message: "Payment verified successfully", order });
+  } catch (err) {
+    console.error("Error verifying payment:", err);
+    res.status(500).json({ message: err.message });
+  }
+};

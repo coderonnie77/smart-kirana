@@ -22,6 +22,8 @@ export const createProduct = (data) => API.post('/products', data);
 export const updateProduct = (id, data) => API.put(`/products/${id}`, data);
 export const deleteProduct = (id) => API.delete(`/products/${id}`);
 export const createOrder = (data) => API.post('/orders', data);
+export const createRazorpayOrder = (data) => API.post('/orders/razorpay', data);
+export const verifyRazorpayPayment = (data) => API.post('/orders/verify', data);
 export const fetchOrders = () => API.get('/orders');
 export const updateOrderStatus = (id, status) => API.put(`/orders/${id}/status`, { status });
 

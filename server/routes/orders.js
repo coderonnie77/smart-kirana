@@ -9,11 +9,15 @@ const {
   getB2BOrders,
   confirmWholesaleOrder, // Renamed from fulfillB2BOrder
   updateB2BOrderStatus,
-  getStarredReorders // Added
+  getStarredReorders, // Added
+  createRazorpayOrder,
+  verifyRazorpayPayment
 } = require('../controllers/orderController');
 const auth = require('../middleware/auth');
 
 router.post('/', auth, processCustomerOrder); // Using the enhanced B2C logic
+router.post('/razorpay', auth, createRazorpayOrder);
+router.post('/verify', auth, verifyRazorpayPayment);
 router.get('/', auth, getOrders);
 router.get('/starred-reorders', auth, getStarredReorders);
 router.put('/:id/status', auth, updateOrderStatus);
