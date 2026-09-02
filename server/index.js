@@ -22,6 +22,27 @@ app.get('/', (req, res) => {
   res.json({ message: "Welcome to Smart-Kirana API v2.0 - Live & Updated" });
 });
 
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', uptime: process.uptime() });
+});
+
+// Global Error Handler Middleware
+app.use((err, req, res, next) => {
+  console.error('Global Error Handler caught:', err);
+  res.status(err.status || 500).json({
+    message: err.message || 'Internal Server Error'
+  });
+});
+
+// Process-level Crash Prevention
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Promise Rejection:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+
 // Database Connection
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/smart-kirana';
@@ -36,3 +57,4 @@ mongoose.connect(MONGODB_URI)
   .catch(err => {
     console.error('Database connection error:', err);
   });
+
